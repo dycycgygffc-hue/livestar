@@ -708,6 +708,7 @@ class SettingsPage extends StatelessWidget {
     ),
   );
 }
+}
 
 
 class LeaderboardPage extends StatefulWidget { const LeaderboardPage({super.key}); @override State<LeaderboardPage> createState()=>_LeaderboardPageState(); }
