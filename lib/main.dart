@@ -357,7 +357,7 @@ class _LiveRoomState extends State<LiveRoom>{
   void _send(String type,[Map<String,dynamic>? extra]){channel?.sink.add(jsonEncode({'type':type,...?extra}));}
   void _chat(){final t=msg.text.trim();if(t.isEmpty)return;_send('chat',{'text':t});msg.clear();}
   Future<void> _stickerSheet(BuildContext c) async { try { final list=await Api.stickers(); if(!mounted)return; await showModalBottomSheet(context:c,backgroundColor:card,builder:(_){ return ListView.builder(padding:const EdgeInsets.all(14),itemCount:list.length,itemBuilder:(_,i){ final st=Map<String,dynamic>.from(list[i]); return ListTile(title:Text("${st["name"]}"),onTap:(){ Navigator.pop(c); _send("sticker",{"code":st["code"]}); }); }; }); } catch(_) { if(mounted) ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content:Text("تعذر تحميل الملصقات"))); } }
-  Future<void> _toggleMic() async {
+  Future<void> _toggleMic() async { final tracks=localStream?.getAudioTracks()??[]; for(final t in tracks)t.enabled=!mic; if(mounted)setState(()=>mic=!mic); }
   Future<void> _toggleCam() async {final tracks=localStream?.getVideoTracks()??[];for(final t in tracks)t.enabled=!cam;setState(()=>cam=!cam);}
   Future<void> _handlePresence(Map<String,dynamic> e) async { if(e['action']=='join'){ await _negotiateAudioPeers(); } }
 
@@ -565,7 +565,7 @@ class Recharge extends StatelessWidget {
           const Spacer(),
           GButton('إنشاء طلب دفع', () async {
             final method=await showModalBottomSheet<String>(context:c,backgroundColor:card,builder:(_)=>Column(mainAxisSize:MainAxisSize.min,children:[for(final m in const ['card','google_pay','apple_pay','asiacell']) ListTile(title:Text(m=='card'?'Visa / Mastercard':m=='google_pay'?'Google Pay':m=='apple_pay'?'Apple Pay':'رصيد آسياسيل'),onTap:()=>Navigator.pop(c,m))]));
-            if(method==null)return; try{ final r=await http.post(Uri.parse('${Api.base}/payments/orders'),headers:Api._headers(),body:jsonEncode({'packageId':packageId,'method':method})); if(!mounted)return; showDialog(context:c,builder:(_)=>AlertDialog(title:const Text('تم إنشاء الطلب'),content:Text(r.statusCode<300?'رقم الطلب: ${jsonDecode(r.body)['orderId']}\nالحالة: بانتظار تأكيد بوابة الدفع':'تعذر إنشاء الطلب'))); }catch(_){if(mounted)ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content:Text('تعذر الاتصال بالسيرفر')));}},
+            if(method==null)return; try{ final r=await http.post(Uri.parse('${Api.base}/payments/orders'),headers:Api._headers(),body:jsonEncode({'packageId':packageId,'method':method})); if(!c.mounted)return; showDialog(context:c,builder:(_)=>AlertDialog(title:const Text('تم إنشاء الطلب'),content:Text(r.statusCode<300?'رقم الطلب: ${jsonDecode(r.body)['orderId']}\nالحالة: بانتظار تأكيد بوابة الدفع':'تعذر إنشاء الطلب'))); }catch(_){if(mounted)ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content:Text('تعذر الاتصال بالسيرفر')));}},
         ]),
       ),
     ),
@@ -685,7 +685,7 @@ class _TransferPageState extends State<TransferPage>{ final id=TextEditingContro
 
 }class TransactionsPage extends StatefulWidget { const TransactionsPage({super.key}); @override State<TransactionsPage> createState()=>_TransactionsPageState(); }
 class _TransactionsPageState extends State<TransactionsPage>{ late Future<List<dynamic>> future; @override void initState(){super.initState(); future=Api.transactions();}
- @override Widget build(BuildContext c)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(appBar:AppBar(title:const Text('سجل العمليات')),body:FutureBuilder<List<dynamic>>(future:future,builder:(c,s){if(s.connectionState!=ConnectionState.done)return const Center(child:CircularProgressIndicator());if(s.hasError)return Center(child:Text('تعذر تحميل السجل'));final rows=s.data??[];if(rows.isEmpty)return const Center(child:Text('لا توجد عمليات بعد'));return RefreshIndicator(onRefresh:()async=>setState(()=>future=Api.transactions()),child:ListView.builder(itemCount:rows.length,itemBuilder:(c,i){final x=rows[i] as Map;return ListTile(leading:const Icon(Icons.receipt_long),title:Text('${x['type']} • ${x['coins']} 🪙'),subtitle:Text('${x['reference']??''}'),trailing:Text('${x['amount_usd']??''}');}));})));
+ @override Widget build(BuildContext c)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(appBar:AppBar(title:const Text('سجل العمليات')),body:FutureBuilder<List<dynamic>>(future:future,builder:(c,s){if(s.connectionState!=ConnectionState.done)return const Center(child:CircularProgressIndicator()),if(s.hasError)return Center(child:Text('تعذر تحميل السجل'));final rows=s.data??[];if(rows.isEmpty)return const Center(child:Text('لا توجد عمليات بعد'));return RefreshIndicator(onRefresh:()async=>setState(()=>future=Api.transactions()),child:ListView.builder(itemCount:rows.length,itemBuilder:(c,i){final x=rows[i] as Map;return ListTile(leading:const Icon(Icons.receipt_long),title:Text('${x['type']} • ${x['coins']} 🪙'),subtitle:Text('${x['reference']??''}'),trailing:Text('${x['amount_usd']??''}');}));})));
 }
 
 class SettingsPage extends StatelessWidget {
