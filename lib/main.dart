@@ -336,7 +336,7 @@ class _LiveRoomState extends State<LiveRoom>{
   }
 
   Future<void> _handleSignal(Map<String,dynamic> d) async {
-    final from=String(d['from']??''); if(from.isEmpty || from==myId) return;
+    final from=d['from']?.toString() ?? ''; if(from.isEmpty || from==myId) return;
     final data=Map<String,dynamic>.from(d['data']??{}); final kind=data['kind'];
     final pc=await _peer(from);
     if(kind=='offer'){
@@ -356,11 +356,8 @@ class _LiveRoomState extends State<LiveRoom>{
 
   void _send(String type,[Map<String,dynamic>? extra]){channel?.sink.add(jsonEncode({'type':type,...?extra}));}
   void _chat(){final t=msg.text.trim();if(t.isEmpty)return;_send('chat',{'text':t});msg.clear();}
-  Future<void> _stickerSheet(BuildContext c) async {
-    try { final list=await Api.stickers(); if(!mounted)return; showModalBottomSheet(context:c,backgroundColor:card,isScrollControlled:true,builder:(_)=>Directionality(textDirection:TextDirection.rtl,child:SafeArea(child:Padding(padding:const EdgeInsets.all(14),child:Column(mainAxisSize:MainAxisSize.min,children:[const Text('ملصقات متحركة ✨',style:TextStyle(fontSize:21,fontWeight:FontWeight.bold)),const SizedBox(height:12),SizedBox(height:250,child:GridView.builder(itemCount:list.length,gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:4,crossAxisSpacing:8,mainAxisSpacing:8),itemBuilder:(_,i){final st=Map<String,dynamic>.from(list[i]); final req=int.tryParse('${st['vipRequired']??0}')??0; final current=int.tryParse('${Api.me?['vipLevel']??0}')??0; final locked=current<req; return InkWell(onTap:locked?(){ScaffoldMessenger.of(c).showSnackBar(SnackBar(content:Text('يحتاج VIP $req')));}:(){Navigator.pop(c);_send('sticker',{'code':st['code']});},child:Container(decoration:BoxDecoration(color:Colors.white.withOpacity(.05),borderRadius:BorderRadius.circular(18),border:Border.all(color:locked?Colors.white10:purple.withOpacity(.5))),child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[_AnimatedStickerBubble(visual:'${st['visual']}',name:'${st['name']}'),if(req>0)Text('VIP $req',style:TextStyle(fontSize:9,color:locked?Colors.white38:gold,fontWeight:FontWeight.bold))])));}))))])))); } catch(_) { if(mounted)ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content:Text('تعذر تحميل الملصقات'))); }
-  }
-
-  Future<void> _toggleMic() async {final tracks=localStream?.getAudioTracks()??[];for(final t in tracks)t.enabled=!mic;setState(()=>mic=!mic);}
+  Future<void> _stickerSheet(BuildContext c) async { try { final list=await Api.stickers(); if(!mounted)return; await showModalBottomSheet(context:c,backgroundColor:card,builder:(_){ return ListView.builder(padding:const EdgeInsets.all(14),itemCount:list.length,itemBuilder:(_,i){ final st=Map<String,dynamic>.from(list[i]); return ListTile(title:Text("${st["name"]}"),onTap:(){ Navigator.pop(c); _send("sticker",{"code":st["code"]}); }); }; }); } catch(_) { if(mounted) ScaffoldMessenger.of(c).showSnackBar(const SnackBar(content:Text("تعذر تحميل الملصقات"))); } }
+  Future<void> _toggleMic() async {
   Future<void> _toggleCam() async {final tracks=localStream?.getVideoTracks()??[];for(final t in tracks)t.enabled=!cam;setState(()=>cam=!cam);}
   Future<void> _handlePresence(Map<String,dynamic> e) async { if(e['action']=='join'){ await _negotiateAudioPeers(); } }
 
