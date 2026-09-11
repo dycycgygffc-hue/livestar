@@ -338,7 +338,7 @@ class _LiveRoomState extends State<LiveRoom>{
   Future<void> _handleSignal(Map<String,dynamic> d) async {
     final from=d['from']?.toString() ?? ''; if(from.isEmpty || from==myId) return;
     final data=Map<String,dynamic>.from(d['data']??{}); final kind=data['kind'];
-    final pc=await _peer(from);
+  Future<void> _toggleMic() async { final tracks=localStream?.getAudioTracks()??[]; for(final t in tracks)t.enabled=!mic; if(mounted)setState(()=>mic=!mic); }
     if(kind=='offer'){
       final sdp=Map<String,dynamic>.from(data['sdp']);
       await pc.setRemoteDescription(RTCSessionDescription(sdp['sdp'],sdp['type']));
@@ -654,7 +654,7 @@ class EarningsPage extends StatelessWidget {
           color: card,
           child: ListTile(
             title: Text('الرصيد القابل للسحب'),
-            subtitle: Text('0.00 USD'),
+  @override Widget build(BuildContext c)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(appBar:AppBar(title:const Text('سجل العمليات')),body:FutureBuilder<List<dynamic>>(future:future,builder:(c,s){if(s.connectionState!=ConnectionState.done)return const Center(child:CircularProgressIndicator()); if(s.hasError)return const Center(child:Text('تعذر تحميل السجل')); final rows=s.data??[]; if(rows.isEmpty)return const Center(child:Text('لا توجد عمليات بعد')); return RefreshIndicator(onRefresh:()async=>setState(()=>future=Api.transactions()),child:ListView.builder(itemCount:rows.length,itemBuilder:(c,i){final x=rows[i] as Map; return ListTile(leading:const Icon(Icons.receipt_long),title:Text('${x['type']} • ${x['coins']} 🪙'),subtitle:Text('${x['reference']??''}'),trailing:Text('${x['amount_usd']??''}'),);}))})));
             leading: Icon(Icons.account_balance_wallet, color: gold),
           ),
         ),
@@ -676,7 +676,6 @@ class _VipPageState extends State<VipPage>{ Map<String,dynamic>? status; bool lo
 class _VipMini extends StatelessWidget { final int level; const _VipMini({required this.level}); @override Widget build(BuildContext c)=>level>0?Container(padding:const EdgeInsets.symmetric(horizontal:5,vertical:2),decoration:BoxDecoration(color:gold.withOpacity(.14),borderRadius:BorderRadius.circular(8)),child:Text('VIP $level',style:const TextStyle(fontSize:8,color:gold,fontWeight:FontWeight.bold))):const SizedBox.shrink(); }
 class _AnimatedStickerBubble extends StatefulWidget { final String visual,name; const _AnimatedStickerBubble({required this.visual,required this.name}); @override State<_AnimatedStickerBubble> createState()=>_AnimatedStickerBubbleState(); }
 class _AnimatedStickerBubbleState extends State<_AnimatedStickerBubble> with SingleTickerProviderStateMixin { late AnimationController ac; @override void initState(){super.initState();ac=AnimationController(vsync:this,duration:const Duration(milliseconds:900))..repeat(reverse:true);} @override void dispose(){ac.dispose();super.dispose();} @override Widget build(BuildContext c)=>AnimatedBuilder(animation:ac,builder:(_,__) {final s=1+(ac.value*.12);return Transform.scale(scale:s,child:Container(padding:const EdgeInsets.symmetric(horizontal:10,vertical:6),decoration:BoxDecoration(gradient:const LinearGradient(colors:[Color(0xFF341454),Color(0xFF9B1FAE)]),borderRadius:BorderRadius.circular(16),boxShadow:[BoxShadow(color:pink.withOpacity(.18),blurRadius:10)]),child:Row(mainAxisSize:MainAxisSize.min,children:[Text(widget.visual,style:const TextStyle(fontSize:25)),const SizedBox(width:5),Text(widget.name,style:const TextStyle(fontSize:10,fontWeight:FontWeight.bold))])));}); }
-
 class TransferPage extends StatefulWidget { const TransferPage({super.key}); @override State<TransferPage> createState()=>_TransferPageState(); }
 class _TransferPageState extends State<TransferPage>{ final id=TextEditingController(); final amount=TextEditingController(); bool loading=false;
  Future<void> doTransfer() async { final n=int.tryParse(amount.text.trim()); if(n==null||n<10){ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('الحد الأدنى للتحويل 10 كوينز')));return;} setState(()=>loading=true); try { await Api.transfer(id.text.trim(),n); await Api.profile(); if(mounted){ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('تم التحويل بنجاح'))); Navigator.pop(context,true);} } catch(e){ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('فشل التحويل: $e')));} finally{if(mounted)setState(()=>loading=false);} }
