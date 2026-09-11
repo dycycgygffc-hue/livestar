@@ -1,0 +1,5 @@
+# DO NOT COMMIT A REAL key.properties FILE
+storePassword=REPLACE_ME
+keyPassword=REPLACE_ME
+keyAlias=livestar
+storeFile=/absolute/path/to/livestar-upload-keystore.jks

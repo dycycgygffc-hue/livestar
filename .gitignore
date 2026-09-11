@@ -1,0 +1,8 @@
+*.jks
+*.keystore
+.env
+*.apk
+*.apks
+*.zip
+.exmu-cfg1.data
+.thumbcache*

@@ -1,0 +1,22 @@
+name: iOS Release
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Generate platform files if needed
+        run: |
+          if [ ! -d ios/Runner ]; then flutter create . --platforms=ios --project-name=livestar --org=com.livestar.app; fi
+      - run: flutter pub get
+      - run: flutter analyze
+      - name: Build iOS archive
+        env:
+          API_URL: ${{ secrets.LIVESTAR_API_URL }}
+        run: flutter build ipa --release --dart-define=API_URL="$API_URL" --no-codesign
